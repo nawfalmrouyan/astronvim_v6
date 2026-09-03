@@ -83,7 +83,7 @@ return {
         -- cmdheight = 0,
         autoread = true,
         -- autocomplete = true,
-        guifont = "Pragmasevka Nerd Font Propo Condensed",
+        -- guifont = "OpalBSD:h14:style=Semi-Condensed\\ Semi-Bold"
       },
       g = { -- vim.g.<key>
         -- configure global vim variables (vim.g)

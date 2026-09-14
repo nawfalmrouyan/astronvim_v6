@@ -83,11 +83,16 @@ return {
         -- cmdheight = 0,
         autoread = true,
         -- autocomplete = true,
+        guifont = "Pragmasevka Nerd Font Propo Condensed",
       },
       g = { -- vim.g.<key>
         -- configure global vim variables (vim.g)
         -- NOTE: `mapleader` and `maplocalleader` must be set in the AstroNvim opts or before `lazy.setup`
         -- This can be found in the `lua/lazy_setup.lua` file
+      },
+      env = { -- vim.env.<key>
+        -- configure environment variables (vim.env)
+        SNACKS_KITTY = "1",
       },
     },
     -- Mappings can be configured through AstroCore as well.

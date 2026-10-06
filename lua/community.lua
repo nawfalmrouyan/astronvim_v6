@@ -33,6 +33,7 @@ return {
   -- { import = "astrocommunity.fuzzy-finder.snacks-picker" },
   -- { import = "astrocommunity.git.codediff-nvim" },
   -- { import = "astrocommunity.lsp.nvim-lint" },
+  { import = "astrocommunity.file-explorer.oil-nvim" },
   { import = "astrocommunity.markdown-and-latex.peek-nvim" },
   -- { import = "astrocommunity.markdown-and-latex.markview-nvim" },
   -- { import = "astrocommunity.media.image-nvim" },

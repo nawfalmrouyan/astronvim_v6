@@ -5,7 +5,7 @@ return {
 
   { "none-ls",           optional = false, enabled = false },
   { "aerial",            optional = false, enabled = false },
-  -- { "neo-tree.nvim",     optional = false, enabled = false },
+  { "neo-tree.nvim",     optional = false, enabled = false },
   { "smart-splits.nvim", optional = false, enabled = false },
   {
     "folke/persistence.nvim",
@@ -39,7 +39,7 @@ return {
         },
       },
       bigfile = {},
-      -- explorer = {},
+      explorer = {},
       quickfile = {},
       statuscolumn = {},
       words = {},

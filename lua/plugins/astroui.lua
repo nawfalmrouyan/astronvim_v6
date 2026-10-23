@@ -2,7 +2,8 @@ return {
   "AstroNvim/astroui",
   ---@type AstroUIOpts
   opts = {
-    colorscheme = "catppuccin-mocha",
+    -- colorscheme = "catppuccin-mocha",
+    colorscheme = "kissaten-evening",
 
     icons = {
       -- configure the loading of the lsp in the status line

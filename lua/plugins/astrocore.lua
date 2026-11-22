@@ -3,11 +3,28 @@ return {
   "AstroNvim/astrocore",
   ---@type AstroCoreOpts
   opts = {
+    -- Project root detection (`:AstroRootInfo` shows the current result)
+    rooter = {
+      detector = {
+        "lsp", -- prefer the workspace reported by a running language server
+        { ".git", "_darcs", ".hg", ".bzr", ".svn" }, -- then a version controlled parent
+        { "lua", "Makefile", "package.json" }, -- finally common project markers
+      },
+      ignore = {
+        servers = {}, -- language servers to ignore, e.g. { "efm" }
+        dirs = {}, -- directory patterns to ignore
+      },
+      autochdir = true, -- follow the detected root automatically
+      scope = "win", -- change the working directory per window
+      notify = true, -- notify on every working directory change
+    },
+
     treesitter = {
       ensure_installed = { "vim", "lua" },
       highlight = {
         enable = true,
-        additional_vim_regex_highlighting = true,
+        -- Vim regex highlighting on top of treesitter is expensive and rarely needed
+        additional_vim_regex_highlighting = false,
       },
       textobjects = {
         select = {
@@ -17,168 +34,128 @@ return {
         },
       },
     },
+
     autocmds = {
-      set_number = {
+      -- Absolute line numbers while inserting, relative numbers otherwise
+      insert_absolute_numbers = {
+        {
+          event = "InsertEnter",
+          desc = "Use absolute line numbers while inserting",
+          callback = function()
+            if vim.wo.relativenumber then
+              vim.g.backtorelative = true
+              vim.wo.relativenumber = false
+              vim.wo.cursorline = false
+            end
+          end,
+        },
         {
           event = "InsertLeave",
-          pattern = "*",
-          desc = "Toggle set number when in normal mode",
-          group = "set_number",
+          desc = "Restore relative line numbers after inserting",
           callback = function()
-            vim.cmd "if &relativenumber | let g:backtorelative = 1 | setlocal number norelativenumber nocursorline | endif"
+            if vim.g.backtorelative then
+              vim.wo.relativenumber = true
+              vim.wo.cursorline = true
+              vim.g.backtorelative = nil
+            end
           end,
         },
       },
-      set_relativenumber = {
-        {
-          event = "InsertLeave",
-          pattern = "*",
-          desc = "Toggle set number when in normal mode",
-          group = "set_relativenumber",
-          callback = function() vim.cmd 'if exists("g:backtorelative") | setlocal relativenumber cursorline | endif' end,
-        },
-      },
-      show_diagnostic = {
+      cursor_diagnostics = {
         {
           event = "CursorHold",
-          pattern = "*",
-          desc = "show diagnostic on Cursor",
-          callback = function() vim.cmd 'lua vim.diagnostic.open_float(nil, { focusable = false, source = "if_many" })' end,
+          desc = "Show diagnostics under the cursor",
+          callback = function() vim.diagnostic.open_float(nil, { focusable = false, source = "if_many" }) end,
         },
       },
     },
+
     -- Configure core features of AstroNvim
     features = {
-      large_buf = { size = 1024 * 256, lines = 10000 }, -- set global limits for large files for disabling features like treesitter
+      large_buf = { size = 1024 * 256, lines = 10000 }, -- limits for disabling features like treesitter
       autopairs = true, -- enable autopairs at start
       cmp = true, -- enable completion at start
-      diagnostics = { virtual_text = false, virtual_lines = false }, -- diagnostic settings on startup
+      diagnostics = { virtual_text = false, virtual_lines = false }, -- diagnostics on startup
       highlighturl = true, -- highlight URLs at start
       notifications = true, -- enable notifications at start
     },
-    -- Diagnostics configuration (for vim.diagnostics.config({...})) when diagnostics are on
+
+    -- Passed to `vim.diagnostic.config()`
     diagnostics = {
       virtual_text = false,
       underline = true,
     },
-    -- vim options can be configured here
+
     options = {
-      opt = { -- vim.opt.<key>
-        relativenumber = true, -- sets vim.opt.relativenumber
-        number = true, -- sets vim.opt.number
-        spell = false, -- sets vim.opt.spell
-        signcolumn = "yes", -- sets vim.opt.signcolumn to yes
+      opt = {
+        relativenumber = true,
+        number = true,
+        spell = false,
+        signcolumn = "yes",
         ignorecase = false,
         smartcase = false,
         list = true,
         listchars = { eol = "¬", trail = "·", precedes = "…", extends = "…", tab = "→\\ " },
         showbreak = "﬌ ",
-        wrap = true, -- sets vim.opt.wrap
+        wrap = true,
         inccommand = "split",
         colorcolumn = "100",
-        -- test highlight only line number.
         cursorline = true,
         cursorlineopt = "both",
-        -- showtabline = 0,
-        -- cmdheight = 0,
         autoread = true,
-        -- autocomplete = true,
-        -- guifont = "OpalBSD:h14:style=Semi-Condensed\\ Semi-Bold"
+        -- Keep splits stable (used by windows.nvim for maximize/restore)
+        winwidth = 20,
+        winminwidth = 20,
+        equalalways = false,
       },
-      g = { -- vim.g.<key>
-        -- configure global vim variables (vim.g)
-        -- NOTE: `mapleader` and `maplocalleader` must be set in the AstroNvim opts or before `lazy.setup`
-        -- This can be found in the `lua/lazy_setup.lua` file
+      g = {
+        -- `mapleader` and `maplocalleader` are set in `lua/lazy_setup.lua`
       },
-      env = { -- vim.env.<key>
-        -- configure environment variables (vim.env)
+      env = {
         SNACKS_KITTY = "1",
       },
     },
-    -- Mappings can be configured through AstroCore as well.
-    -- NOTE: keycodes follow the casing in the vimdocs. For example, `<Leader>` must be capitalized
+
     mappings = {
-      -- first key is the mode
       n = {
-        -- second key is the lefthand side of the map
-        -- navigate buffer tabs with `H` and `L`
-        -- L = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
-        -- H = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
-        -- navigate buffer tabs
+        -- Buffers
         ["]b"] = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
         ["[b"] = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
-
-        -- mappings seen under group name "Buffer"
-        ["<Leader>bo"] = { "<cmd>%bd|e#|bd#<cr>", desc = "Close all buffers but the current one" },
-        ["<Leader>bd"] = {
-          function()
-            require("astroui.status.heirline").buffer_picker(
-              function(bufnr) require("astrocore.buffer").close(bufnr) end
-            )
-          end,
-          desc = "Close buffer from tabline",
+        ["<Leader>bo"] = {
+          function() require("astrocore.buffer").close_all(true) end,
+          desc = "Close all buffers but the current one",
         },
         ["<Leader>c"] = {
           function()
-            local bufs = vim.fn.getbufinfo({ buflisted = true })
+            local bufs = vim.fn.getbufinfo { buflisted = true }
             require("astrocore.buffer").close(0)
-            if not bufs[2] then
-              require("snacks").dashboard()
-            end
+            if not bufs[2] then require("snacks").dashboard() end
           end,
           desc = "Close buffer",
         },
 
-        -- tables with just a `desc` key will be registered with which-key if it's installed
-        -- this is useful for naming menus
-        -- ["<Leader>b"] = { desc = "Buffers" },
-        ["<Leader>a"] = { desc = "Image Clip" },
-        ["<Leader>b"] = { desc = "Buffers" },
+        -- which-key group names
+        ["<Leader>D"] = { desc = "Diff" },
+        ["<Leader>P"] = { desc = "Pull Requests" },
         ["<Leader>m"] = { desc = "Markdown" },
         ["<Leader>mh"] = { desc = "Headings" },
-        ["<Leader>z"] = { desc = "Zk" },
-        ["<Leader>fs"] = false,
+        ["<Leader>s"] = { desc = "SQL" },
 
-        -- setting a mapping to false will disable it
-        -- ["<C-S>"] = false,
-        ["<M-o>"] = { "o<esc>", desc = "Insert new line below" },
+        -- Quality of life
         ["<M-O>"] = { "O<esc>", desc = "Insert new line above" },
-        ["<M-$>"] = { "g$", desc = "End of wrap line" },
+        ["<M-$>"] = { "g$", desc = "End of wrapped line" },
         ["/"] = { "ms/", desc = "Search and replace" },
         ["<Esc>"] = { "<Cmd>nohlsearch|diffupdate|normal!<C-l><CR>", desc = "Clear highlights" },
         ["<MiddleMouse>"] = { "i<MiddleMouse><ESC>", desc = "Paste mode" },
-        -- From the primeagen
-        -- ["J"] = "mzJ`z"
-        -- ["<C-d>"] = { "<C-d>zz", desc = "Scroll half page down" },
-        -- ["<C-u>"] = { "<C-u>zz", desc = "Scroll half page up" },
-        -- ["n"] = { "nzzzv", desc = "Next search result" },
-        -- ["N"] = { "Nzzzv", desc = "Previous search result" },
-        -- ["Q"] = { "<nop>", desc = "Disable Ex mode" },
         ["<M-w>"] = { ":set wrap! wrap?<cr>", desc = "Toggle wrap" },
         ["<M-r>"] = { ":set relativenumber! relativenumber?<cr>", desc = "Toggle relative number" },
-        ["<leader>fs"] = { "<cmd>%s/\\s\\+$//e<cr>:noh<cr>", desc = "Delete trailing whitespace from file" },
-        ["gj"] = {
-          function()
-            vim.cmd "silent! /^##\\+\\s.*$"
-            vim.cmd "nohlsearch"
-          end,
-          desc = "Move to previous markdown header",
-        },
-        ["gk"] = {
-          function()
-            vim.cmd "silent! ?^##\\+\\s.*$"
-            vim.cmd "nohlsearch"
-          end,
-          desc = "Move to next markdown header",
-        },
+        ["<Leader>fs"] = { "<cmd>%s/\\s\\+$//e<cr>:noh<cr>", desc = "Delete trailing whitespace" },
       },
       i = {
         ["<M-o>"] = { "<C-o>o", desc = "Insert new line below" },
         ["<M-O>"] = { "<C-o>O", desc = "Insert new line above" },
       },
       t = {
-        -- setting a mapping to false will disable it
-        -- ["<esc>"] = false,
         ["<Esc>"] = { "<C-\\><C-N>", desc = "Escape terminal mode" },
         ["<C-Up>"] = { "<C-\\><C-N>resize -2<cr>", desc = "Resize up" },
         ["<C-Down>"] = { "<C-\\><C-N>resize +2<cr>", desc = "Resize down" },

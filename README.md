@@ -1,34 +1,48 @@
-# AstroNvim Template
+# AstroNvim v6 configuration
 
-**NOTE:** This is for AstroNvim v6+
+Personal [AstroNvim](https://github.com/AstroNvim/AstroNvim) setup, launched with
+`NVIM_APPNAME=astronvim_v6` (see `av` / `astro` in `~/.local/bin`).
 
-A template for getting started with [AstroNvim](https://github.com/AstroNvim/AstroNvim)
+## Layout
 
-## 🛠️ Installation
-
-#### Make a backup of your current nvim and shared folder
-
-```shell
-mv ~/.config/nvim ~/.config/nvim.bak
-mv ~/.local/share/nvim ~/.local/share/nvim.bak
-mv ~/.local/state/nvim ~/.local/state/nvim.bak
-mv ~/.cache/nvim ~/.cache/nvim.bak
+```text
+init.lua                 bootstrap lazy.nvim, then load lazy_setup + polish
+lua/
+  lazy_setup.lua         AstroNvim import + lazy.nvim options
+  community.lua          AstroCommunity packages
+  keymaps.lua            global keymaps that are not AstroCore mappings
+  polish.lua             post-startup tweaks (filetypes, leap, UI2, transparency)
+  neovide.lua            Neovide-only GUI settings
+  plugins/               one plugin (or one concern) per file
+    astrocore.lua        core options, autocmds, rooter, mappings
+    astrolsp.lua         LSP features, formatting, handlers, mappings
+    astroui.lua          colorscheme and icons
+    snacks.lua           dashboard, explorer, picker
+    disabled.lua         every intentionally disabled plugin
+    archive/             old `.bak` specs, kept for reference (not loaded)
+ftplugin/
+  markdown.lua           markdown-only keymaps (headings, navigation)
 ```
 
-#### Create a new user repository from this template
+## Conventions
 
-Press the "Use this template" button above to create a new repository to store your user configuration.
+- Plugin overrides go in `lua/plugins/<plugin>.lua`; use `opts` instead of a
+  custom `config` whenever the plugin provides `setup()`.
+- Put lazy-loading triggers (`event`, `cmd`, `keys`, `ft`) on plugins that are
+  not needed at startup.
+- Disabled plugins belong in `lua/plugins/disabled.lua`. Use the full repository
+  name (`nvimtools/none-ls.nvim`, not `none-ls`) or the disable is ignored.
+- Filetype-specific mappings belong in `ftplugin/<filetype>.lua` with
+  `buffer = 0`.
+- `lua/plugins/archive/` is never imported by lazy.nvim; files there end in
+  `.lua.bak` on purpose.
 
-You can also just clone this repository directly if you do not want to track your user configuration in GitHub.
+## Maintenance
 
-#### Clone the repository
-
-```shell
-git clone https://github.com/<your_user>/<your_repository> ~/.config/nvim
+```vim
+:Lazy sync        " install/update/clean plugins
+:Lazy profile     " find slow-loading plugins
+:checkhealth      " verify LSP, treesitter, providers, etc.
 ```
 
-#### Start Neovim
-
-```shell
-nvim
-```
+The colorscheme is `kissaten-evening`; `<F2>` toggles background transparency.

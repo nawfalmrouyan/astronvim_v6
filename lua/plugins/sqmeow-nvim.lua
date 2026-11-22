@@ -1,17 +1,18 @@
+---@type LazySpec
 return {
   "2giosangmitom/sqmeow.nvim",
   dependencies = { "MunifTanjim/nui.nvim" },
   version = "*",
   build = function()
-    -- Downloads the matching release binary; pass 'curl', 'wget', 'powershell' or 'cargo' to choose.
+    -- Download the matching release binary; pass 'curl', 'wget', 'powershell' or 'cargo' to choose.
     require("sqmeow").install()
   end,
   opts = {},
   cmd = "Sqmeow",
   keys = {
-    { "<leader>Dd", "<cmd>Sqmeow toggle<cr>", desc = "Toggle" },
-    { "<leader>Dc", "<cmd>Sqmeow cancel<cr>", desc = "Cancel" },
-    { "<leader>Da", "<cmd>Sqmeow add<cr>", desc = "Add Connection" },
-    { "<leader>Ds", "<cmd>Sqmeow scratch<cr>", desc = "New Scratchpad" },
+    { "<leader>sd", "<cmd>Sqmeow toggle<cr>", desc = "SQL: toggle" },
+    { "<leader>sc", "<cmd>Sqmeow cancel<cr>", desc = "SQL: cancel" },
+    { "<leader>sa", "<cmd>Sqmeow add<cr>", desc = "SQL: add connection" },
+    { "<leader>ss", "<cmd>Sqmeow scratch<cr>", desc = "SQL: new scratchpad" },
   },
 }

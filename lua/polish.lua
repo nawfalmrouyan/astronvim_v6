@@ -1,56 +1,44 @@
--- Set up custom filetypes
+-- Runtime tweaks that run after Lazy has loaded the plugin set.
+
+-- Custom filetypes
 vim.filetype.add {
   extension = {
-    -- foo = "fooscript",
+    todo = "txt",
+    eml = "txt",
+    list = "txt",
   },
   filename = {
-    -- ["Foofile"] = "fooscript",
     [".env"] = "config",
-    [".todo"] = "txt",
-    [".eml"] = "txt",
-    [".list"] = "txt",
   },
   pattern = {
-    -- ["~/%.config/foo/.*"] = "fooscript",
-    ["req.*.txt"] = "config",
+    ["req.*%.txt"] = "config", -- requirements.txt
     ["gitconf.*"] = "gitconfig",
   },
 }
 
--- vim.opt.guicursor = {
---   "n-v:block-block-Cursor/lCursor",
---   "i-c-ci-ve:ver25-Cursor/lCursor",
---   "r-cr:hor20",
---   "o:hor50",
---   "i:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor",
---   "sm:block-blinkwait175-blinkoff150-blinkon175",
--- }
-
 require "neovide"
 require "keymaps"
 
-vim.api.nvim_create_autocmd('CmdlineLeave', {
-  group = vim.api.nvim_create_augroup('LeapOnSearch', {}),
+---------------------------------------------------------------------------
+-- Leap extras: labels on search, clever-f/t and line-scoped jumping
+---------------------------------------------------------------------------
+vim.api.nvim_create_autocmd("CmdlineLeave", {
+  group = vim.api.nvim_create_augroup("LeapOnSearch", {}),
   callback = function()
     local ev = vim.v.event
-    local is_search_cmd = (ev.cmdtype == '/') or (ev.cmdtype == '?')
-    -- Allow CmdLineLeave-related chores to be completed before
-    -- invoking Leap.
+    local is_search_cmd = (ev.cmdtype == "/") or (ev.cmdtype == "?")
+    -- Let the command line finish before invoking Leap.
     vim.schedule(function()
       local cnt = vim.fn.searchcount().total
       if is_search_cmd and (not ev.abort) and (cnt > 1) then
-        -- We want "safe" labels, but no autojump (as the search
-        -- command already does that), so just use `safe_labels`
-        -- as `labels`, with n/N removed.
-        local labels = require('leap').opts.safe_labels:gsub('[nN]', '')
-        -- For `pattern` search, we never need to adjust conceallevel
-        -- (no user input). We cannot merge `nil` from a table, but
-        -- using the option's current value has the same effect.
-        local vim_opts = { ['wo.conceallevel'] = vim.wo.conceallevel }
-        require('leap').leap {
-          pattern = vim.fn.getreg('/'),  -- last search pattern
+        -- Use "safe" labels, but no autojump: the search already jumped.
+        local labels = require("leap").opts.safe_labels:gsub("[nN]", "")
+        -- Pattern search needs no conceallevel adjustment; keep the current value.
+        local vim_opts = { ["wo.conceallevel"] = vim.wo.conceallevel }
+        require("leap").leap {
+          pattern = vim.fn.getreg "/",
           windows = { vim.fn.win_getid() },
-          opts = { safe_labels = '', labels = labels, vim_opts = vim_opts, }
+          opts = { safe_labels = "", labels = labels, vim_opts = vim_opts },
         }
       end
     end)
@@ -60,21 +48,16 @@ vim.api.nvim_create_autocmd('CmdlineLeave', {
 do
   local function ft(key_specific_args)
     require("leap").leap(vim.tbl_deep_extend("keep", key_specific_args, {
-      -- Uncomment to limit search scope to the current line:
-      -- pattern = function(pat) return '\\%.l' .. pat end,
       inputlen = 1,
       inclusive = true,
       opts = {
-        -- Force autojump.
-        labels = "",
-        -- Match the modes where you don't need labels (`:h mode()`).
+        labels = "", -- force autojump
         safe_labels = vim.fn.mode(1):match "o" and "" or nil,
       },
     }))
   end
 
-  -- A helper function making it easier to set "clever-f" behavior
-  -- (use f/F or t/T instead of ;/, - see the plugin clever-f.vim).
+  -- clever-f/t behavior: reuse the motion keys instead of ; and ,
   local clever = require("leap.user").with_traversal_keys
   local clever_f, clever_t = clever("f", "F"), clever("t", "T")
 
@@ -84,37 +67,38 @@ do
   vim.keymap.set({ "n", "x", "o" }, "T", function() ft { backward = true, offset = 1, opts = clever_t } end)
 end
 
+-- Jump without searching the lines around the cursor
 vim.keymap.set({ "n", "x", "o" }, "|", function()
   local line = vim.fn.line "."
-  -- Skip 3-3 lines around the cursor.
   local top, bot = unpack { math.max(1, line - 3), line + 3 }
   require("leap").leap {
     pattern = "\\v(%<" .. top .. "l|%>" .. bot .. "l)$",
     windows = { vim.fn.win_getid() },
     opts = { safe_labels = "" },
   }
-end)
+end, { desc = "Leap outside the current lines" })
 
-require("vim._core.ui2").enable { enable = true }
-vim.cmd "packadd nvim.undotree"
-vim.keymap.set("n", "<leader>u", require("undotree").open)
+---------------------------------------------------------------------------
+-- Neovim 0.13 built-ins
+---------------------------------------------------------------------------
+if vim.fn.has "nvim-0.13" == 1 then
+  require("vim._core.ui2").enable { enable = true }
 
--- vim.opt.fillchars = {
---   fold = " ",
---   foldopen = "▾",
---   foldclose = "▸",
---   foldinner = " ",
---   foldsep = " ",
--- }
+  vim.cmd "packadd nvim.undotree"
+  vim.keymap.set("n", "<leader>u", require("undotree").open, { desc = "Undo tree" })
+end
 
-vim.t.is_transparent = 0
-function toggle_transparent()
-  if vim.t.is_transparent == 0 then
-    vim.api.nvim_set_hl(0, "Normal", {guibg = NONE; ctermbg = NONE})
-    vim.t.is_transparent = 1
+---------------------------------------------------------------------------
+-- Transparency toggle
+---------------------------------------------------------------------------
+local function toggle_transparency()
+  if vim.g.transparent then
+    vim.g.transparent = false
+    -- Re-applying the colorscheme restores every highlight, not just Normal
+    vim.cmd.colorscheme(vim.g.colors_name or "kissaten-evening")
   else
-    vim.opt.background = "dark"
-    vim.t.is_transparent = 0
+    vim.g.transparent = true
+    vim.api.nvim_set_hl(0, "Normal", { bg = "NONE", ctermbg = "NONE" })
   end
 end
-vim.keymap.set("n", "<F2>", toggle_transparent, opts)
+vim.keymap.set("n", "<F2>", toggle_transparency, { desc = "Toggle background transparency" })

@@ -24,7 +24,7 @@ return {
   { import = "astrocommunity.pack.yaml" },
   -- import/override with your plugins folder
   { import = "astrocommunity.ai.opencode-nvim" },
-  { import = "astrocommunity.colorscheme.catppuccin" },
+  -- { import = "astrocommunity.colorscheme.catppuccin" }, -- using kissaten
   { import = "astrocommunity.diagnostics.trouble-nvim" },
   { import = "astrocommunity.editing-support.dial-nvim" },
   { import = "astrocommunity.editing-support.mini-operators" },

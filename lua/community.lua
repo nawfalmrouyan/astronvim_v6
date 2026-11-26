@@ -12,7 +12,7 @@ return {
   { import = "astrocommunity.pack.ps1" },
   -- Base pack with basedpyright, black and isort
   { import = "astrocommunity.pack.python.base" },
-  { import = "astrocommunity.pack.python.basedpyright" },
+  { import = "astrocommunity.pack.python.pyrefly" },
   { import = "astrocommunity.pack.python.black" },
   { import = "astrocommunity.pack.python.isort" },
   -- { import = "astrocommunity.pack.rust" },
